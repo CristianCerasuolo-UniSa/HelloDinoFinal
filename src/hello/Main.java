@@ -1,16 +1,10 @@
 package hello;
 
-import com.jme3.anim.AnimComposer;
-import com.jme3.anim.tween.Tweens;
-import com.jme3.anim.tween.action.Action;
 import com.jme3.app.SimpleApplication;
 import com.jme3.bullet.BulletAppState;
-import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.collision.shapes.CollisionShape;
 import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.bullet.util.CollisionShapeFactory;
-import com.jme3.effect.ParticleEmitter;
-import com.jme3.effect.ParticleMesh;
 import com.jme3.input.KeyInput;
 import com.jme3.input.MouseInput;
 import com.jme3.input.controls.KeyTrigger;
@@ -21,12 +15,8 @@ import com.jme3.light.Light;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
-import com.jme3.math.Quaternion;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
-import com.jme3.post.FilterPostProcessor;
-import com.jme3.renderer.RenderManager;
-import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
@@ -34,8 +24,6 @@ import com.jme3.scene.control.Control;
 import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Quad;
 import com.jme3.scene.shape.Sphere;
-import com.jme3.shadow.DirectionalLightShadowFilter;
-import com.jme3.shadow.DirectionalLightShadowRenderer;
 import com.jme3.terrain.geomipmap.TerrainLodControl;
 import com.jme3.terrain.geomipmap.TerrainQuad;
 import com.jme3.terrain.geomipmap.lodcalc.DistanceLodCalculator;
@@ -49,22 +37,31 @@ import com.jme3.terrain.heightmap.ImageBasedHeightMap;
  * @author normenhansen
  */
 public class Main extends SimpleApplication {
+    
+    
+    private final static int DIFFICULTY_MULTIPLIER = 10;
+    private final static int MAX_GENERATED_ALLOWED = 80;
+    private final static int REDUCTOR = 1;
+    private int generatedMeteors = 0;
     private BulletAppState bulletAppState;
+    private Node enemies;
+    private static int score = 0;
+    private float lastMeteorElapsedTime = 0.0f;
+    private float meteorsSpawnInterval = 10.0f;
 
     public static void main(String[] args) {
         Main app = new Main();
         app.start();
     }
+
     
 
     @Override
     public void simpleInitApp() {
         flyCam.setEnabled(false);
-        
-        bulletAppState=new BulletAppState();
+        bulletAppState = new BulletAppState();
         stateManager.attach(bulletAppState);
         bulletAppState.setDebugEnabled(true);
-        
         
         configureInputs();
         
@@ -86,7 +83,7 @@ public class Main extends SimpleApplication {
         Spatial sky=createSky();
         rootNode.attachChild(sky);
 
-        Node enemies=new Node("Enemies");
+        enemies=new Node("Enemies");
         rootNode.attachChild(enemies);
 
         
@@ -97,13 +94,9 @@ public class Main extends SimpleApplication {
         
         Spatial meteor=createMeteor(new Vector3f(2.0f, 40.0f,-4.0f));
         enemies.attachChild(meteor);
-        
-        
-        
+
 
         cam.setLocation(new Vector3f(0f,1f,4f));
-        
-        
     }
     
     private Geometry createBox(float size, ColorRGBA color) {
@@ -280,8 +273,6 @@ public class Main extends SimpleApplication {
                 new KeyTrigger(KeyInput.KEY_LEFT),
                 new MouseAxisTrigger(MouseInput.AXIS_X,true)
                 );
-        
-        
         inputManager.addMapping("CamRight",
                 new KeyTrigger(KeyInput.KEY_RIGHT),
                 new MouseAxisTrigger(MouseInput.AXIS_X,false)
@@ -289,10 +280,46 @@ public class Main extends SimpleApplication {
 
     }
     
+    private void updateMeteorStorm(float tpf){
+        lastMeteorElapsedTime += tpf;
 
-    @Override
-    public void simpleUpdate(float tpf) {
+        // Verifica se è trascorso abbastanza tempo per generare un nuovo meteorite
+        if (lastMeteorElapsedTime >= meteorsSpawnInterval && generatedMeteors <= MAX_GENERATED_ALLOWED) {
+            // Genera un nuovo meteorite
+            enemies.attachChild(createMeteor(getRandomSkyPosition(50, 150)));
+
+            // Incrementa il numero di meteoriti generati finora
+            generatedMeteors++;
+
+            // Resetta il tempo trascorso
+            lastMeteorElapsedTime = 0;
+            updateScore(+generatedMeteors);
+        }
         
+    
     }
 
+    private Vector3f getRandomSkyPosition(float minDistance, float maxDistance){
+        float distance = FastMath.nextRandomFloat() * (maxDistance - minDistance) + minDistance;
+        float azimuth = FastMath.nextRandomFloat() * FastMath.TWO_PI;
+        float elevation = FastMath.nextRandomFloat() * FastMath.HALF_PI;
+
+        float x = distance * FastMath.cos(azimuth) * FastMath.sin(elevation);
+        float y = distance * FastMath.cos(elevation);
+        float z = distance * FastMath.sin(azimuth) * FastMath.sin(elevation);
+
+        return new Vector3f(x, y, z);
+    }
+    
+    @Override
+    public void simpleUpdate(float tpf) {
+        updateMeteorStorm(tpf);
+        
+        
+        System.out.println("Score: " + score);
+    }
+    
+    public static void updateScore(int value){
+        score += value;
+    }
 }

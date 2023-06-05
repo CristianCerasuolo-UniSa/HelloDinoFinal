@@ -120,6 +120,7 @@ public class DamageControl extends AbstractControl implements PhysicsCollisionLi
             return;
         
         removeEnemy(other);
+        Main.updateScore(-500);
         collided=true;
     }
     
