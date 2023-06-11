@@ -17,6 +17,7 @@ import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
+import com.jme3.niftygui.NiftyJmeDisplay;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
@@ -30,6 +31,8 @@ import com.jme3.terrain.geomipmap.lodcalc.DistanceLodCalculator;
 import com.jme3.texture.Texture;
 import com.jme3.util.SkyFactory;
 import com.jme3.terrain.heightmap.ImageBasedHeightMap;
+import de.lessvoid.nifty.Nifty;
+
 
 /**
  * This is the Main Class of your Game. You should only do initialization here.
@@ -45,9 +48,10 @@ public class Main extends SimpleApplication {
     private int generatedMeteors = 0;
     private BulletAppState bulletAppState;
     private Node enemies;
-    private static int score = 0;
     private float lastMeteorElapsedTime = 0.0f;
     private float meteorsSpawnInterval = 10.0f;
+    private GameScreenController gameScreenController;
+    private Nifty nifty;
 
     public static void main(String[] args) {
         Main app = new Main();
@@ -58,6 +62,18 @@ public class Main extends SimpleApplication {
 
     @Override
     public void simpleInitApp() {
+        
+        NiftyJmeDisplay niftyDisplay = NiftyJmeDisplay.newNiftyJmeDisplay(
+            assetManager, inputManager, audioRenderer, guiViewPort);
+        /** Create a new NiftyGUI object */
+        nifty = niftyDisplay.getNifty();
+        this.gameScreenController = new GameScreenController();
+        /** Read your XML and initialize your custom ScreenController */
+        nifty.fromXml("Interface/scoregui.xml", "gameScreen", this.gameScreenController);
+        // nifty.fromXml("Interface/helloworld.xml", "start", new MySettingsScreen(data));
+        // attach the Nifty display to the gui view port as a processor
+        guiViewPort.addProcessor(niftyDisplay);
+        
         flyCam.setEnabled(false);
         bulletAppState = new BulletAppState();
         stateManager.attach(bulletAppState);
@@ -209,7 +225,7 @@ public class Main extends SimpleApplication {
         dino.addControl(cc);
         Control jc = new JumpControl(inputManager, rootNode);
         dino.addControl(jc);
-        DamageControl dc=new DamageControl(rootNode);
+        DamageControl dc=new DamageControl(rootNode, gameScreenController);
         bulletAppState.getPhysicsSpace().addCollisionListener(dc);
         dino.addControl(dc);
         
@@ -238,8 +254,8 @@ public class Main extends SimpleApplication {
         sphere.getMaterial().setTexture("NormalMap", bumpMap);
         
         
-        MeteorControl mc=new MeteorControl(rootNode);
-        sphere.addControl(mc);
+        //MeteorControl mc=new MeteorControl(rootNode);
+        //sphere.addControl(mc);
         
         //TerrainHeightControl hc=new TerrainHeightControl(rootNode, 0.3f);
         //sphere.addControl(hc);
@@ -250,6 +266,8 @@ public class Main extends SimpleApplication {
         sphere.addControl(rbc);
         bulletAppState.getPhysicsSpace().add(rbc);
         rbc.setPhysicsLocation(pos);
+        rbc.setLinearVelocity(new Vector3f(0f,-30f,0f));
+        
         
         return sphere;
     }
@@ -293,7 +311,7 @@ public class Main extends SimpleApplication {
 
             // Resetta il tempo trascorso
             lastMeteorElapsedTime = 0;
-            updateScore(+generatedMeteors);
+            this.gameScreenController.updateScore(generatedMeteors);
         }
         
     
@@ -314,12 +332,7 @@ public class Main extends SimpleApplication {
     @Override
     public void simpleUpdate(float tpf) {
         updateMeteorStorm(tpf);
-        
-        
-        System.out.println("Score: " + score);
-    }
-    
-    public static void updateScore(int value){
-        score += value;
+        gameScreenController.updateScore((int)tpf);
+        nifty.update();
     }
 }

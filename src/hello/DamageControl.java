@@ -49,9 +49,11 @@ public class DamageControl extends AbstractControl implements PhysicsCollisionLi
     private boolean dead=false;
     private Node enemies;
     private float time;
+    private GameScreenController gameScreenController;
     
-    public DamageControl(Node rootNode) {
+    public DamageControl(Node rootNode, GameScreenController gameScreenController) {
         enemies=(Node)rootNode.getChild("Enemies");
+        this.gameScreenController = gameScreenController;
     }
 
     @Override
@@ -120,7 +122,7 @@ public class DamageControl extends AbstractControl implements PhysicsCollisionLi
             return;
         
         removeEnemy(other);
-        Main.updateScore(-500);
+        this.gameScreenController.updateScore(-500);
         collided=true;
     }
     
