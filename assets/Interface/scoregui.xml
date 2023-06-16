@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<nifty>
+    <screen id="gameScreen" controller="hello.GameScreenController">
+        <layer id="foregroundLayer" childLayout="vertical">
+            <text id="scoreText" text="Score: 0" font="aurulent-sans-16.fnt" color="#ffffff" align="center"/>
+        </layer>
+    </screen>
+</nifty>
